@@ -15,8 +15,8 @@ def load_data(messages_filepath, categories_filepath):
         df: combined dataframe having both messages and categories data
     '''
 
-    messages = pd.read_csv('messages.csv')
-    categories = pd.read_csv('categories.csv')
+    messages = pd.read_csv(messages_filepath)
+    categories = pd.read_csv(categories_filepath)
 
     df = messages.merge(categories, how='outer', on='id')
 
@@ -67,7 +67,7 @@ def save_data_to_db(df, database_filename):
         df: cleaned dataframe containing messages and categories
         database_filename: Path to SQLite database
     """
-    engine = create_engine('sqlite:///' + database_filepath)
+    engine = create_engine('sqlite:///' + database_filename)
     table_name = database_filename.replace(".db","") + "_table"
     df.to_sql(table_name, engine, index=False, if_exists='replace')
 
@@ -90,10 +90,10 @@ def main():
         df = load_data(messages_filepath, categories_filepath)
 
         print('Cleaning data...')
-        df = clean_data(df)
+        df = clean_categories(df)
 
         print('Saving data...\n    DATABASE: {}'.format(database_filepath))
-        save_data(df, database_filepath)
+        save_data_to_db(df, database_filepath)
 
         print('Cleaned data saved to database!')
 
