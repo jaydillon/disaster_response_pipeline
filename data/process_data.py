@@ -51,6 +51,9 @@ def clean_categories(df):
         categories[column] = categories[column].astype(str).str[-1:]
         categories[column] = categories[column].astype(int)
 
+        # Remove rows that don't have binary values
+        categories = categories[(categories[column] == 0) | (categories[column] == 1)]
+
     # Concate original dataframe with the new categories dataframe, and remove duplicates
     df = df.drop('categories',axis=1)
     df = pd.concat([df,categories],axis=1)
