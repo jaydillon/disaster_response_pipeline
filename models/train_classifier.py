@@ -19,6 +19,7 @@ import pickle
 from scipy.stats import gmean
 # import relevant functions/modules from the sklearn
 from sklearn.pipeline import Pipeline, FeatureUnion
+from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
@@ -119,7 +120,7 @@ class StartingVerbExtractor(BaseEstimator, TransformerMixin):
         return pd.DataFrame(X_tagged)
 
 
-def build_pipeline():
+def build_model():
     """
     Build a ML pipeline
 
@@ -141,10 +142,18 @@ def build_pipeline():
         ('classifier', MultiOutputClassifier(AdaBoostClassifier()))
     ])
 
-    return pipeline
+    # Add GridSearchCV to find optimal parameters
+    parameters = {
+        'classifier__estimator__learning_rate': [0.01, 0.02, 0.05],
+        'classifier__estimator__n_estimators': [10, 20, 40]
+        }
+
+    cv = GridSearchCV(pipeline, param_grid=parameters, scoring='f1_micro', n_jobs=-1)
+
+    return cv
 
 
-def evaluate_pipeline(pipeline, X_test, y_test, category_names):
+def evaluate_model(model, X_test, y_test, category_names):
     """
     This function applies a ML pipeline to a test set and prints out the model performance (accuracy and f1score)
 
@@ -155,7 +164,7 @@ def evaluate_pipeline(pipeline, X_test, y_test, category_names):
         category_names -> label names (multi-output)
     """
 
-    y_pred = pipeline.predict(X_test)
+    y_pred = model.predict(X_test)
     overall_accuracy = (y_pred == y_test).mean().mean()
 
     print('Average overall accuracy {0:.2f}%'.format(overall_accuracy*100))
@@ -168,7 +177,7 @@ def evaluate_pipeline(pipeline, X_test, y_test, category_names):
         print(classification_report(y_test[column],y_pred[column]))
 
 
-def save_model_as_pickle(pipeline, pickle_filepath):
+def save_model_as_pickle(model, pickle_filepath):
     """
     Save Pipeline function
 
@@ -179,7 +188,7 @@ def save_model_as_pickle(pipeline, pickle_filepath):
         pickle_filepath -> destination path to save .pkl file
 
     """
-    pickle.dump(pipeline, open(pickle_filepath, 'wb'))
+    pickle.dump(model, open(pickle_filepath, 'wb'))
 
 
 def main():
@@ -197,17 +206,15 @@ def main():
         X, y, category_names = load_data_from_db(database_filepath)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
 
-        print('Building pipeline ...')
-        pipeline = build_pipeline()
-
         print('Training pipeline ...')
-        pipeline.fit(X_train, y_train)
+        model = build_model()
+        model.fit(X_train, y_train)
 
         print('Evaluating model...')
-        evaluate_pipeline(pipeline, X_test, y_test, category_names)
+        evaluate_model(model, X_test, y_test, category_names)
 
         print('Saving pipeline to {} ...'.format(pickle_filepath))
-        save_model_as_pickle(pipeline, pickle_filepath)
+        save_model_as_pickle(model, pickle_filepath)
 
         print('The ML model is saved!')
 

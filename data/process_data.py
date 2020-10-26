@@ -56,7 +56,7 @@ def clean_categories(df):
 
     # Concate original dataframe with the new categories dataframe, and remove duplicates
     df = df.drop('categories',axis=1)
-    df = pd.concat([df,categories],axis=1)
+    df = pd.concat([df,categories], join='inner', axis=1)
     df = df.drop_duplicates()
 
     return df
